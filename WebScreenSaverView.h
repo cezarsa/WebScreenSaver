@@ -4,8 +4,10 @@
 @interface WebScreenSaverView : ScreenSaverView
 {
 	WebView *webView;
-    IBOutlet id configSheet;
+    IBOutlet NSWindow* configSheet;
     IBOutlet NSTextField *urlField;
 }
+
+@property (strong, nonatomic) ScreenSaverDefaults *defaults;
 
 @end

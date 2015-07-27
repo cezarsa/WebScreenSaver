@@ -8,20 +8,16 @@ static NSString * const WebScreenSaverModuleName = @"com.github.cezarsa.WebScree
 - (id)initWithFrame:(NSRect)frame isPreview:(BOOL)isPreview
 {
     self = [super initWithFrame:frame isPreview:isPreview];
-    
-    if (self) {
-        ScreenSaverDefaults *defaults;
-        defaults = [ScreenSaverDefaults defaultsForModuleWithName:WebScreenSaverModuleName];
-        
-        [defaults registerDefaults:[NSDictionary dictionaryWithObjectsAndKeys:
+    if (!self) {
+        NSLog(@"Failed to init frame.");
+        return self;
+    }
+    [self.defaults registerDefaults:[NSDictionary dictionaryWithObjectsAndKeys:
                                     @"http://google.com", @"Url",
                                     nil]];
-        
-		webView = [[WebView alloc] initWithFrame:[self bounds] frameName:nil groupName:nil];
-        
-		[webView setMainFrameURL:[defaults stringForKey:@"Url"]];
-		[self addSubview:webView];
-    }
+	webView = [[WebView alloc] initWithFrame:[self bounds] frameName:nil groupName:nil];
+	[webView setMainFrameURL:[self.defaults stringForKey:@"Url"]];
+	[self addSubview:webView];
     return self;
 }
 
@@ -30,23 +26,27 @@ static NSString * const WebScreenSaverModuleName = @"com.github.cezarsa.WebScree
     return YES;
 }
 
+- (ScreenSaverDefaults *)defaults
+{
+    if(!_defaults)
+    {
+        _defaults = [ScreenSaverDefaults defaultsForModuleWithName:WebScreenSaverModuleName];
+    }
+    return _defaults;
+}
+
 - (NSWindow *)configureSheet
 {
-    ScreenSaverDefaults *defaults;
-    
-    defaults = [ScreenSaverDefaults defaultsForModuleWithName:WebScreenSaverModuleName];
-    
     if (!configSheet)
     {
-        if (![NSBundle loadNibNamed:@"ConfigureSheet" owner:self])
+        NSBundle *bundle = [NSBundle bundleForClass:[self class]];
+        if (![bundle loadNibNamed:@"ConfigureSheet" owner:self topLevelObjects:nil])
         {
-            NSLog( @"Failed to load configure sheet." );
+            NSLog(@"Failed to load configure sheet.");
             NSBeep();
         }
     }
-    
-    [urlField setStringValue:[defaults valueForKey:@"Url"]];
-    
+    [urlField setStringValue:[self.defaults valueForKey:@"Url"]];
     return configSheet;
 }
 
@@ -57,15 +57,12 @@ static NSString * const WebScreenSaverModuleName = @"com.github.cezarsa.WebScree
 
 - (IBAction) okClick: (id)sender
 {
-    ScreenSaverDefaults *defaults;
-    
-    defaults = [ScreenSaverDefaults defaultsForModuleWithName:WebScreenSaverModuleName];
-    
-    [defaults setValue:[urlField stringValue] forKey:@"Url"];
-    
-    [defaults synchronize];
-    
+    [self.defaults setValue:[urlField stringValue] forKey:@"Url"];
+    [self.defaults synchronize];
     [[NSApplication sharedApplication] endSheet:configSheet];
+    if (webView) {
+        [webView setMainFrameURL:[self.defaults stringForKey:@"Url"]];
+    }
 }
 
 @end
